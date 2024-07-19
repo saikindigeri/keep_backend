@@ -6,7 +6,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     let password = document.getElementById('password').value;
  
     try {
-        const response = await fetch('http://localhost:5001/register', {
+        const response = await fetch('https://keep-backend-1.onrender.com/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
