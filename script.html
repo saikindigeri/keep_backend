@@ -184,7 +184,13 @@ textarea {
 }
 
 
-
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
 
 /* Note Styles */
 .note {
@@ -227,6 +233,8 @@ textarea {
     background: linear-gradient(135deg, #357ae8, #4285f4);
     transform: scale(1.05);
 }
+
+
 
 
 
@@ -306,7 +314,7 @@ textarea {
                     <p>Labels: ${note.labels.join(', ')}</p>
                     <p>Reminder: ${note.reminder ? new Date(note.reminder).toLocaleString() : 'No'}</p>
                     <div class="note-options">
-                          <input type="color" class="color-picker" value="#ffffff" onchange="changeBackgroundColor(event, ${note.id})">
+                          <input type="color" class="color-picker" value="${note.backgroundColor || '#ffffff'}" onchange="changeBackgroundColor(event, ${note.id})">
                         <button onclick="toggleArchive(${note.id})">${note.archived ? 'Archived' : 'Archive'}</button>
                         <button onclick="toggleTrash(${note.id})">${note.trashed ? 'Restore' : 'Trash'}</button>
                     </div>
@@ -351,12 +359,20 @@ textarea {
 
 
         function changeBackgroundColor(event, noteId) {
-    const selectedColor = event.target.value;
-    const note = document.querySelector(`.note[data-id="${noteId}"]`);
-    note.style.backgroundColor = selectedColor;
+           const selectedColor = event.target.value;
+             const note = document.querySelector(`.note[data-id="${noteId}"]`);
+               note.style.backgroundColor = selectedColor;
 
     // Optionally save the color change to your data storage (e.g., localStorage or server)
+    // Example (if using localStorage):
+    const notes = JSON.parse(localStorage.getItem('notes')) || [];
+    const noteIndex = notes.findIndex(n => n.id === noteId);
+    if (noteIndex !== -1) {
+        notes[noteIndex].backgroundColor = selectedColor;
+        localStorage.setItem('notes', JSON.stringify(notes));
+    }
 }
+
         // Toggle trash status of a note
         function toggleTrash(noteId) {
             const notes = getData('notes');
