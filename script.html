@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Keep Clone</title>
+    <style>
+       /* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: lightcyan;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 250px;
+    background-color: lightgrey;
+    border-right: 1px solid #ddd;
+    height: 100vh;
+    position: fixed;
+    overflow-y: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h3 {
+    padding: 15px;
+    margin: 0;
+    font-size: 16px;
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ddd;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.sidebar ul li.active {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
+
+.sidebar ul li:hover {
+    background-color: darkblue;
+    color: white;
+}
+
+.sidebar button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background-color: #4285f4;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    border-top: 1px solid #ddd;
+    text-align: center;
+}
+
+.sidebar button:hover {
+    background-color: #357ae8;
+}
+
+/* Main Container Styles */
+.container {
+    margin-left: 250px;
+    padding: 20px;
+}
+
+h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.search-bar {
+    margin-bottom: 20px;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+/* Note Styles */
+.note {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+    padding: 15px;
+    position: relative;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 20px;
+}
+
+.note h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+.note p {
+    margin: 0;
+}
+
+.note-options {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+.note-options button {
+    background: none;
+    border: none;
+    color: #4285f4;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+.note-options button:hover {
+    color: #357ae8;
+}
+
+.color-picker {
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+/* Button Styles */
+button {
+    background-color: #4285f4;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #357ae8;
+}
+
+input[type="text"], textarea {
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .container {
+        margin-left: 0;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Menu</h3>
+        <ul>
+            <li id="notesTab" onclick="showSection('notes')">Notes</li>
+            <li id="remindersTab" onclick="showSection('reminders')">Reminders</li>
+            <li id="archiveTab" onclick="showSection('archive')">Archive</li>
+            <li id="trashTab" onclick="showSection('trash')">Trash</li>
+        </ul>
+        <h3>Labels</h3>
+        <ul id="labelsList">
+            <!-- Labels will be dynamically added here -->
+        </ul>
+        <button onclick="logout()">Logout</button>
+    </div>
+    <div class="container">
+        <h2>Welcome to  Keep Notes</h2>
+        <p>Hello, <span id="username"></span>! Create a new note:</p>
+        <div class="search-bar">
+            <input type="text" id="searchQuery" placeholder="Search notes..." onkeyup="searchNotes()">
+        </div>
+        <div>
+            <input type="text" id="noteTitle" placeholder="Note Title"><br>
+            <textarea id="noteContent" placeholder="Note Content"></textarea><br>
+            <input type="color" id="noteColor" class="color-picker"><br>
+            <input type="text" id="noteLabels" placeholder="Add labels, separated by commas"><br>
+            <label>
+                <input type="datetime-local" id="noteReminder"> Reminder
+            </label><br>
+            <button onclick="addNote()">Add Note</button>
+        </div>
+        <div id="notesContainer"></div>
+    </div>
+
+    <script>
+        // Get username from localStorage
+        let username = localStorage.getItem('username');
+        if (!username) {
+            window.location.href = '/login.html';
+        }
+        document.getElementById('username').textContent = username;
+
+        // Save and get data from localStorage
+        function saveData(key, data) {
+            localStorage.setItem(`${key}_${username}`, JSON.stringify(data));
+        }
+
+        function getData(key) {
+            return JSON.parse(localStorage.getItem(`${key}_${username}`)) || [];
+        }
+
+        // Fetch and display notes
+        function fetchNotes() {
+            const notes = getData('notes');
+            displayNotes(notes);
+        }
+
+        function displayNotes(notes) {
+            const notesContainer = document.getElementById('notesContainer');
+            notesContainer.innerHTML = '';
+            notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.classList.add('note');
+                noteElement.style.backgroundColor = note.backgroundColor || '#fff';
+                noteElement.innerHTML = `
+                    <h3>${note.title}</h3>
+                    <p>${note.content}</p>
+                    <p>Labels: ${note.labels.join(', ')}</p>
+                    <p>Reminder: ${note.reminder ? new Date(note.reminder).toLocaleString() : 'No'}</p>
+                    <div class="note-options">
+                        <button onclick="toggleArchive(${note.id})">${note.archived ? 'Archived' : 'Archive'}</button>
+                        <button onclick="toggleTrash(${note.id})">${note.trashed ? 'Restore' : 'Trash'}</button>
+                    </div>
+                `;
+                notesContainer.appendChild(noteElement);
+            });
+        }
+
+        // Add a new note
+        function addNote() {
+            const notes = getData('notes');
+            const newNote = {
+                id: Date.now(),
+                title: document.getElementById('noteTitle').value,
+                content: document.getElementById('noteContent').value,
+                backgroundColor: document.getElementById('noteColor').value,
+                labels: document.getElementById('noteLabels').value.split(',').map(label => label.trim()).filter(label => label),
+                reminder: document.getElementById('noteReminder').value,
+                archived: false,
+                trashed: false
+            };
+            notes.push(newNote);
+            saveData('notes', notes);
+            fetchNotes();
+            updateSidebarLabels();
+        }
+
+        // Toggle archive status of a note
+        function toggleArchive(noteId) {
+            const notes = getData('notes');
+            const noteIndex = notes.findIndex(note => note.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].archived = !notes[noteIndex].archived;
+                if (notes[noteIndex].archived) {
+                    notes[noteIndex].trashed = false; // Unset trash if archiving
+                }
+                saveData('notes', notes);
+                fetchNotes(); // Refresh notes display
+                updateSidebarLabels(); // Update labels
+            }
+        }
+
+        // Toggle trash status of a note
+        function toggleTrash(noteId) {
+            const notes = getData('notes');
+            const noteIndex = notes.findIndex(note => note.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].trashed = !notes[noteIndex].trashed;
+                if (notes[noteIndex].trashed) {
+                    notes[noteIndex].archived = false; // Unset archive if trashing
+                }
+                saveData('notes', notes);
+                fetchNotes(); // Refresh notes display
+                updateSidebarLabels(); // Update labels
+            }
+        }
+
+        // Update sidebar labels
+        function updateSidebarLabels() {
+            const notes = getData('notes');
+            const labels = new Set();
+            notes.forEach(note => note.labels.forEach(label => labels.add(label)));
+            const labelsList = document.getElementById('labelsList');
+            labelsList.innerHTML = '';
+            labels.forEach(label => {
+                const labelItem = document.createElement('li');
+                labelItem.textContent = label;
+                labelItem.onclick = () => showNotesByLabel(label);
+                labelsList.appendChild(labelItem);
+            });
+        }
+
+        // Show selected section
+        function showSection(section) {
+            // Remove active class from all sections
+            document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+
+            // Add active class to the clicked section
+            document.getElementById(`${section}Tab`).classList.add('active');
+
+            // Display notes based on the section
+            if (section === 'notes') {
+                showNotes();
+            } else if (section === 'reminders') {
+                showReminders();
+            } else if (section === 'archive') {
+                showArchived();
+            } else if (section === 'trash') {
+                showTrash();
+            }
+        }
+
+        // Display notes that are not archived and not trashed
+        function showNotes() {
+            const notes = getData('notes').filter(note => !note.archived && !note.trashed);
+            displayNotes(notes);
+        }
+
+        // Display notes that have reminders
+        function showReminders() {
+            const notes = getData('notes').filter(note => note.reminder);
+            displayNotes(notes);
+        }
+
+        // Display archived notes
+        function showArchived() {
+            const notes = getData('notes').filter(note => note.archived);
+            displayNotes(notes);
+        }
+
+        // Display trashed notes
+        function showTrash() {
+            const notes = getData('notes').filter(note => note.trashed);
+            displayNotes(notes);
+        }
+
+        // Show notes by label
+        function showNotesByLabel(label) {
+            const notes = getData('notes').filter(note => note.labels.includes(label));
+            displayNotes(notes);
+        }
+
+        // Search notes
+        function searchNotes() {
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const notes = getData('notes').filter(note => 
+                note.title.toLowerCase().includes(query) || note.content.toLowerCase().includes(query)
+            );
+            displayNotes(notes);
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('username');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>
