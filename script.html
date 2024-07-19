@@ -255,7 +255,7 @@ textarea {
                     <p>Labels: ${note.labels.join(', ')}</p>
                     <p>Reminder: ${note.reminder ? new Date(note.reminder).toLocaleString() : 'No'}</p>
                     <div class="note-options">
-                         <button onclick="toggleBackgroundColor(${note.id})">Change Background Color</button>
+                          <input type="color" class="color-picker" value="#ffffff" onchange="changeBackgroundColor(event, ${note.id})">
                         <button onclick="toggleArchive(${note.id})">${note.archived ? 'Archived' : 'Archive'}</button>
                         <button onclick="toggleTrash(${note.id})">${note.trashed ? 'Restore' : 'Trash'}</button>
                     </div>
@@ -299,14 +299,13 @@ textarea {
         }
 
 
-        function toggleBackgroundColor(noteId) {
+        function changeBackgroundColor(event, noteId) {
+    const selectedColor = event.target.value;
     const note = document.querySelector(`.note[data-id="${noteId}"]`);
-    const currentColor = note.style.backgroundColor;
-    const colors = ['#ffffff', '#f8d7da', '#d4edda', '#d1ecf1', '#fff3cd'];
-    let nextColor = colors[(colors.indexOf(currentColor) + 1) % colors.length];
-    note.style.backgroundColor = nextColor;
-}
+    note.style.backgroundColor = selectedColor;
 
+    // Optionally save the color change to your data storage (e.g., localStorage or server)
+}
         // Toggle trash status of a note
         function toggleTrash(noteId) {
             const notes = getData('notes');
